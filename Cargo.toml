@@ -1,20 +1,66 @@
-[package]
-name = "qa"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "2"
+members = ["src/aceditor", "src/web"]
 
-[dependencies]
-leptos = { version = "0.8", features = ["csr"] }
-leptos_meta = { version = "0.8" }
-leptos_router = { version = "0.8" }
-console_log = "1"
-log = "0.4"
-console_error_panic_hook = "0.1"
-
-[dev-dependencies]
+[workspace.dependencies]
+# WASM / JS bindings
+js-sys = "0.3"
 wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
 wasm-bindgen-test = "0.3"
-web-sys = { version = "0.3", features = ["Document", "Window"] }
+web-sys = { version = "0.3", features = [
+    # aceditor
+    "HtmlElement",
+    # web worker
+    "BlobPropertyBag",
+    "DedicatedWorkerGlobalScope",
+    "DomException",
+    "File",
+    "FileList",
+    "FileReader",
+    "HtmlInputElement",
+    "MessageEvent",
+    "Navigator",
+    "ProgressEvent",
+    "Storage",
+    "Worker",
+    "WorkerOptions",
+    "WorkerType",
+    "Url",
+] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde-wasm-bindgen = "0.6"
+
+# Error handling
+thiserror = "2"
+
+# Async / concurrency
+once_cell = "1"
+tokio = { version = "1", features = ["sync"] }
+parking_lot = "0.12"
+
+# Utilities
+fragile = "2"
+hex = "0.4"
+
+# Leptos
+leptos = { version = "0.8", features = ["csr"] }
+leptos_meta = "0.8"
+leptos_router = "0.8"
+reactive_stores = "0.2"
+
+# Logging
+console_log = "1"
+console_error_panic_hook = "0.1"
+log = "0.4"
+
+# SQLite WASM
+sqlite-wasm-rs = { version = "0.5", default-features = false }
+sqlite-wasm-vec = "0.1"
+sqlite-wasm-vfs = "0.2"
 
 [profile.release]
 opt-level = 'z'

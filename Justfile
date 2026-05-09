@@ -16,3 +16,11 @@ run:
 # Builds the project for release
 release:
     trunk build --release
+
+# Type-check the web crate (native target, fast)
+check:
+    cargo check -p qa --target wasm32-unknown-unknown
+
+# Type-check all workspace members
+check-all:
+    cargo check --workspace --target wasm32-unknown-unknown

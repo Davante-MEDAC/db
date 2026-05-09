@@ -5,5 +5,5 @@ pub struct EmbeddedDb {
 
 pub static EMBEDDED_DBS: &[EmbeddedDb] = &[EmbeddedDb {
     name: "qa.sqlite",
-    data: include_bytes!("../../databases/qa.sqlite"),
+    data: include_bytes!("../../../../databases/qa.sqlite"),
 }];

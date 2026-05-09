@@ -1,0 +1,12 @@
+[package]
+name = "aceditor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+js-sys = { workspace = true }
+serde = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+thiserror = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true }
