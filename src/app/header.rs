@@ -30,7 +30,6 @@ pub fn Header() -> impl IntoView {
 
                 reader.set_onload(Some(on_load.as_ref().unchecked_ref()));
                 reader.read_as_array_buffer(&**file).unwrap();
-
                 on_cleanup(move || drop(on_load));
             }
         }
@@ -44,8 +43,9 @@ pub fn Header() -> impl IntoView {
                         let input = target.unchecked_into::<HtmlInputElement>();
                         if let Some(files) = input.files() {
                             if files.length() > 0 {
-                                set_file
-                                    .set(Some(crate::FragileConfirmed::new(files.get(0).unwrap())));
+                                set_file.set(Some(crate::FragileConfirmed::new(
+                                    files.get(0).unwrap(),
+                                )));
                             }
                         }
                     }
@@ -59,36 +59,34 @@ pub fn Header() -> impl IntoView {
     };
 
     view! {
-        <div class="header">
-            <div class="header-brand">
-                <span class="header-icon">"🗄️"</span>
-                <span class="header-title">"Data Explorer"</span>
-            </div>
-            <div class="header-actions">
-                <Show
-                    when=move || state.db_filename().read().is_some()
-                    fallback=|| ()
-                >
-                    <span class="header-db-name">
+        <header class="flex items-center justify-between h-12 px-4 bg-slate-800 border-b border-slate-700 shrink-0 z-10">
+            <div class="flex items-center gap-2">
+                <span class="text-blue-400 text-lg">"🗄️"</span>
+                <span class="text-sm font-semibold text-slate-100 tracking-tight">"Data Explorer"</span>
+                <Show when=move || state.db_filename().read().is_some() fallback=|| ()>
+                    <span class="text-slate-600 mx-1">"/"</span>
+                    <span class="text-xs text-slate-400 font-mono bg-slate-700 px-2 py-0.5 rounded max-w-48 truncate">
                         {move || state.db_filename().read().clone().unwrap_or_default()}
                     </span>
                 </Show>
+            </div>
+            <div class="flex items-center gap-3">
                 <input
                     type="file"
                     node_ref=input_ref
                     style="display:none"
                     accept=".db,.sqlite,.sqlite3"
                 />
-                <button class="btn-primary" on:click=on_open>
+                <button
+                    class="text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded transition-colors"
+                    on:click=on_open
+                >
                     "Open Database"
                 </button>
             </div>
-        </div>
-        <Show
-            when=move || state.error().read().is_some()
-            fallback=|| ()
-        >
-            <div class="error-bar">
+        </header>
+        <Show when=move || state.error().read().is_some() fallback=|| ()>
+            <div class="bg-red-950 border-b border-red-800 text-red-300 text-xs px-4 py-2 shrink-0">
                 {move || state.error().read().clone().unwrap_or_default()}
             </div>
         </Show>

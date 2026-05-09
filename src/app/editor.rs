@@ -38,7 +38,7 @@ pub fn SqlEditor() -> impl IntoView {
     editor_ref.on_load(move |_| {
         let opt = EditorOptionsBuilder::default()
             .mode("ace/mode/sql")
-            .theme("ace/theme/github")
+            .theme("ace/theme/github_dark")
             .value("SELECT * FROM sqlite_master;")
             .build();
 

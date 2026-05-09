@@ -1,13 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <title>QA Data Explorer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              surface: '#1e293b',
+              base: '#0f172a',
+            }
+          }
+        }
+      }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/ace.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/mode-sql.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.41.0/theme-github_dark.min.js" crossorigin="anonymous"></script>
+
     <link data-trunk rel="css" href="public/styles.css" />
     <link data-trunk rel="icon" href="public/favicon.ico" />
     <link data-trunk rel="rust" href="Cargo.toml" data-cargo-no-default-features data-cargo-features="sqlite3" data-bin="app" data-type="main" />
     <link data-trunk rel="rust" href="Cargo.toml" data-cargo-no-default-features data-cargo-features="sqlite3" data-bin="sqlite3" data-type="worker" data-loader-shim data-bindgen-target="web" />
   </head>
-  <body></body>
+  <body class="h-full bg-slate-900 text-slate-100 antialiased"></body>
 </html>
