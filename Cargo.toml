@@ -11,6 +11,9 @@ wasm-bindgen-test = "0.3"
 web-sys = { version = "0.3", features = [
     # aceditor
     "HtmlElement",
+    # download
+    "Blob",
+    "HtmlAnchorElement",
     # web worker
     "BlobPropertyBag",
     "DedicatedWorkerGlobalScope",
