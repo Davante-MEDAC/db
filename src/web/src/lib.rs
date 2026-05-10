@@ -65,10 +65,18 @@ pub enum WorkerError {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct DownloadDbResponse {
+    pub filename: String,
+    #[serde(with = "serde_wasm_bindgen::preserve")]
+    pub data: Uint8Array,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum WorkerRequest {
     Open(OpenOptions),
     Run(RunOptions),
     LoadDb(LoadDbOptions),
+    DownloadDb,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -77,6 +85,7 @@ pub enum WorkerResponse {
     Open(Result<()>),
     Run(Result<SQLiteRunResult>),
     LoadDb(Result<()>),
+    DownloadDb(Result<DownloadDbResponse>),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -254,8 +263,33 @@ async fn handle_responses(state: Store<AppState>, mut rx: UnboundedReceiver<Work
                     state.query_error().set(Some(err.to_string()));
                 }
             },
+            WorkerResponse::DownloadDb(result) => match result {
+                Ok(resp) => trigger_download(&resp.filename, &resp.data),
+                Err(err) => state.error().set(Some(err.to_string())),
+            },
         }
     }
+}
+
+fn trigger_download(filename: &str, data: &Uint8Array) {
+    use leptos::prelude::document;
+    use wasm_bindgen::JsCast;
+    use web_sys::{Blob, HtmlAnchorElement, Url};
+
+    let array = js_sys::Array::new();
+    array.push(data);
+    let blob = Blob::new_with_u8_array_sequence(&array).unwrap();
+    let url = Url::create_object_url_with_blob(&blob).unwrap();
+    let document = document();
+    let a = document
+        .create_element("a")
+        .unwrap()
+        .dyn_into::<HtmlAnchorElement>()
+        .unwrap();
+    a.set_href(&url);
+    a.set_download(filename);
+    a.click();
+    Url::revoke_object_url(&url).unwrap();
 }
 
 fn handle_run_result(state: Store<AppState>, result: SQLiteRunResult) {
@@ -310,6 +344,16 @@ fn handle_run_result(state: Store<AppState>, result: SQLiteRunResult) {
                 state.query_columns().set(vec![]);
                 state.query_rows().set(vec![]);
             }
+        }
+        tag if tag.starts_with("insert:") => {
+            let table_name = tag.strip_prefix("insert:").unwrap_or("").to_string();
+            send_request(
+                state,
+                WorkerRequest::Run(RunOptions {
+                    sql: format!("SELECT * FROM \"{table_name}\" LIMIT 1000"),
+                    tag: format!("data:{table_name}"),
+                }),
+            );
         }
         _ => {}
     }

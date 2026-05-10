@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 use reactive_stores::Store;
 
-use crate::app::{AppState, AppStateStoreFields};
+use crate::{RunOptions, WorkerRequest, app::{AppState, AppStateStoreFields}, send_request};
 
 #[component]
 pub fn TableView() -> impl IntoView {
@@ -25,6 +25,7 @@ pub fn TableView() -> impl IntoView {
                     </button>
                 </div>
                 <DataGrid />
+                <InsertForm />
             </Show>
         </div>
     }
@@ -51,6 +52,100 @@ fn TableHeader() -> impl IntoView {
                 {move || state.selected_table().read().clone().unwrap_or_default()}
             </h1>
         </div>
+    }
+}
+
+#[component]
+fn InsertForm() -> impl IntoView {
+    let state = expect_context::<Store<AppState>>();
+    let values = RwSignal::new(Vec::<String>::new());
+
+    Effect::new(move || {
+        let count = state.table_columns().read().len();
+        values.update(|v| v.resize(count, String::new()));
+    });
+
+    let on_submit = move |ev: web_sys::SubmitEvent| {
+        ev.prevent_default();
+        let table = match state.selected_table().read().clone() {
+            Some(t) => t,
+            None => return,
+        };
+        let cols = state.table_columns().read().clone();
+        let vals = values.get_untracked();
+        if cols.is_empty() {
+            return;
+        }
+        let col_list = cols
+            .iter()
+            .map(|c| format!("\"{}\"", c.replace('"', "\"\"")))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let val_list = vals
+            .iter()
+            .map(|v| {
+                if v.is_empty() {
+                    "NULL".to_string()
+                } else {
+                    format!("'{}'", v.replace('\'', "''"))
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!("INSERT INTO \"{table}\" ({col_list}) VALUES ({val_list})");
+        send_request(
+            state,
+            WorkerRequest::Run(RunOptions {
+                sql,
+                tag: format!("insert:{table}"),
+            }),
+        );
+        values.update(|v| v.iter_mut().for_each(|s| s.clear()));
+    };
+
+    view! {
+        <form
+            class="shrink-0 border-t border-slate-700 bg-slate-800/50 px-4 py-3"
+            on:submit=on_submit
+        >
+            <div class="text-xs font-medium text-slate-400 mb-2">"Insert Row"</div>
+            <div class="flex gap-2 flex-wrap items-end">
+                <For
+                    each=move || {
+                        let t = state.selected_table().read().clone().unwrap_or_default();
+                        state.table_columns().read().clone().into_iter().enumerate()
+                            .map(move |(i, col)| (format!("{t}:{i}"), i, col))
+                            .collect::<Vec<_>>()
+                    }
+                    key=|(k, _, _)| k.clone()
+                    children=move |(_, i, col)| {
+                        view! {
+                            <div class="flex flex-col gap-0.5">
+                                <label class="text-xs text-slate-500">{col}</label>
+                                <input
+                                    type="text"
+                                    class="bg-slate-700 border border-slate-600 text-slate-100 text-xs px-2 py-1 rounded w-28 focus:outline-none focus:border-blue-500"
+                                    prop:value=move || values.read().get(i).cloned().unwrap_or_default()
+                                    on:input=move |ev| {
+                                        values.update(|v| {
+                                            if i < v.len() {
+                                                v[i] = event_target_value(&ev);
+                                            }
+                                        });
+                                    }
+                                />
+                            </div>
+                        }
+                    }
+                />
+                <button
+                    type="submit"
+                    class="text-xs font-medium bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded transition-colors self-end"
+                >
+                    "Insert"
+                </button>
+            </div>
+        </form>
     }
 }
 

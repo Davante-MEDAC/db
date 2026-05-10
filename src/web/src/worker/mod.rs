@@ -1,19 +1,22 @@
-mod sqlitend;
+use std::sync::Arc;
 
-use crate::{
-    LoadDbOptions, OpenOptions, RunOptions, SQLiteRunResult, WorkerError, WorkerRequest,
-    WorkerResponse,
-};
+use js_sys::Uint8Array;
 use once_cell::sync::Lazy;
 use sqlite_wasm_rs::MemVfsUtil;
 use sqlite_wasm_rs::WasmOsCallback;
 use sqlitend::SQLiteDb;
-use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::mpsc::UnboundedReceiver;
 use wasm_bindgen::{JsCast, JsValue, prelude::Closure};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{DedicatedWorkerGlobalScope, MessageEvent};
+
+use crate::{
+    DownloadDbResponse, LoadDbOptions, OpenOptions, RunOptions, SQLiteRunResult, WorkerError,
+    WorkerRequest, WorkerResponse,
+};
+
+mod sqlitend;
 
 type Result<T> = std::result::Result<T, WorkerError>;
 
@@ -40,6 +43,21 @@ where
     F: FnMut(&mut SQLiteWorker) -> Result<T>,
 {
     f(DB.lock().await.as_mut().ok_or(WorkerError::NotOpened)?)
+}
+
+async fn download_db() -> Result<DownloadDbResponse> {
+    with_worker(|worker| {
+        let filename = &worker.open_options.filename;
+        let db = MEM_VFS
+            .0
+            .export_db(filename)
+            .map_err(|err| WorkerError::DownloadDb(format!("{err}")))?;
+        Ok(DownloadDbResponse {
+            filename: filename.clone(),
+            data: Uint8Array::new_from_slice(&db),
+        })
+    })
+    .await
 }
 
 async fn load_db(options: LoadDbOptions) -> Result<()> {
@@ -92,6 +110,7 @@ async fn execute_task(scope: DedicatedWorkerGlobalScope, mut rx: UnboundedReceiv
             WorkerRequest::Open(options) => WorkerResponse::Open(open(options).await),
             WorkerRequest::Run(options) => WorkerResponse::Run(run(options).await),
             WorkerRequest::LoadDb(options) => WorkerResponse::LoadDb(load_db(options).await),
+            WorkerRequest::DownloadDb => WorkerResponse::DownloadDb(download_db().await),
         };
         if let Err(err) = scope.post_message(&serde_wasm_bindgen::to_value(&resp).unwrap()) {
             log::error!("Failed to send response: {err:?}");

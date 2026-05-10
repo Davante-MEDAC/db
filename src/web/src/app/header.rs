@@ -77,6 +77,14 @@ pub fn Header() -> impl IntoView {
                     style="display:none"
                     accept=".db,.sqlite,.sqlite3"
                 />
+                <Show when=move || *state.db_loaded().read() fallback=|| ()>
+                    <button
+                        class="text-xs font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded transition-colors"
+                        on:click=move |_| send_request(state, WorkerRequest::DownloadDb)
+                    >
+                        "Export"
+                    </button>
+                </Show>
                 <button
                     class="text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded transition-colors"
                     on:click=on_open
